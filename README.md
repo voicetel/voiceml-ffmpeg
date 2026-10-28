@@ -5,7 +5,7 @@ complete source it is built from.
 
 VoiceML Phone uses ffmpeg for one job: before a video clip is sent as an MMS,
 the app runs ffmpeg to compress it to an MP4 of about 1 MB (H.264 video,
-AAC audio). ffmpeg runs as a separate program, installed in the app's
+AAC audio), tone-mapping HDR footage to SDR first. ffmpeg runs as a separate program, installed in the app's
 `resources/ffmpeg` folder next to a copy of this README.
 
 ## License
@@ -17,6 +17,8 @@ version 2 or (at your option) any later version**.
   with `--enable-gpl` and linked with **x264** (GPL 2 or later), the H.264
   encoder. See `LICENSE.md`, `COPYING.GPLv2` and `COPYING.LGPLv2.1` in the
   ffmpeg source, and `COPYING` in the x264 source.
+- It also links **zimg** (WTFPL, a permissive license compatible with the
+  GPL) for HDR tone mapping; see `COPYING` in the zimg source.
 - No `--enable-nonfree` component is included, so the binaries may be
   redistributed under the GPL.
 - The build scripts in this repository (`build.sh`, `Dockerfile`) are
@@ -25,7 +27,8 @@ version 2 or (at your option) any later version**.
   it only starts ffmpeg as a child process.
 
 FFmpeg is a trademark of Fabrice Bellard, originator of the FFmpeg project.
-x264 is developed by the VideoLAN project.
+x264 is developed by the VideoLAN project. zimg is developed by
+sekrit-twc.
 
 ## Source
 
@@ -36,9 +39,10 @@ each checked against its SHA-256 by `build.sh` before use:
 |---|---|---|
 | FFmpeg | 8.1.3 (release tarball, PGP-signed by the FFmpeg release key `FCF9 86EA 15E6 E293 A564 4F10 B432 2F04 D676 58D8`) | https://ffmpeg.org/releases/ffmpeg-8.1.3.tar.xz |
 | x264 | stable branch, commit `b35605ace3ddf7c1a5d67a2eb553f034aef41d55` (2025-06-08) | https://code.videolan.org/videolan/x264 |
+| zimg | 3.0.6 (tag `release-3.0.6`, commit `f819b14e8f39d1282400b0d9543e8ef73c1b2bbd`) | https://github.com/sekrit-twc/zimg |
 
 No patches are applied. The complete corresponding source for each release,
-the two tarballs above plus the build scripts, is attached to the same
+the tarballs above plus the build scripts, is attached to the same
 [GitHub release](../../releases) as the binaries it built. It stays there for
 as long as those binaries are distributed.
 
@@ -48,7 +52,7 @@ as long as those binaries are distributed.
 |---|---|
 | `linux-x64`, `linux-arm64` | Docker (`Dockerfile`, Debian bookworm, GCC cross compilers), statically linked |
 | `win32-x64` | Docker (`Dockerfile`, MinGW-w64), statically linked |
-| `darwin-x64`, `darwin-arm64` | macOS with Xcode, `nasm` and `pkg-config` (not yet released; until then the app sends macOS videos uncompressed) |
+| `darwin-x64`, `darwin-arm64` | macOS with Xcode, `nasm`, `pkg-config`, `autoconf`, `automake` and `libtool` (not yet released; until then the app sends macOS videos uncompressed) |
 
 Each binary comes with a `BUILDINFO.txt` that gives its exact `configure`
 line and SHA-256.
@@ -56,7 +60,8 @@ line and SHA-256.
 The configuration is deliberately small: every ffmpeg component is off except
 what the app needs. That means the `file` protocol; the MP4/MOV/3GP,
 Matroska/WebM, Ogg, MPEG-PS/TS and AVI demuxers; the decoders for common
-phone and camera video and audio; scaling and rotation filters; the libx264
+phone and camera video and audio; scaling and rotation filters; zimg's
+`zscale` and the `tonemap` filter, to turn HDR (HLG or PQ) into SDR; the libx264
 and native AAC encoders; and the MP4 muxer. There is no networking, no
 `ffplay` and no `ffprobe`. AV1 input is not supported.
 
