@@ -52,7 +52,7 @@ as long as those binaries are distributed.
 |---|---|
 | `linux-x64`, `linux-arm64` | Docker (`Dockerfile`, Debian bookworm, GCC cross compilers), statically linked |
 | `win32-x64` | Docker (`Dockerfile`, MinGW-w64), statically linked |
-| `darwin-x64`, `darwin-arm64` | macOS with Xcode, `nasm`, `pkg-config`, `autoconf`, `automake` and `libtool` (not yet released; until then the app sends macOS videos uncompressed) |
+| `darwin-x64`, `darwin-arm64` | macOS (Apple silicon) with Xcode, `nasm`, `pkg-config`, `autoconf`, `automake` and `libtool`, for macOS 11 or later; linked statically except for Apple's system libraries |
 
 Each binary comes with a `BUILDINFO.txt` that gives its exact `configure`
 line and SHA-256.
@@ -74,8 +74,10 @@ docker build -t voiceml-ffmpeg-builder .
 docker run --rm -v "$PWD:/repo:ro" -v "$PWD/src:/src:ro" -v "$PWD/out:/out" \
 	voiceml-ffmpeg-builder /repo/build.sh linux-x64 /src /out/linux-x64
 
-# On a Mac:
-./build.sh darwin-arm64 ./src ./out/darwin-arm64
+# On a Mac (Homebrew's libtool installs libtoolize as glibtoolize; its
+# gnubin directory provides the plain name zimg's autogen.sh runs):
+PATH="$(brew --prefix libtool)/libexec/gnubin:$PATH" \
+	./build.sh darwin-arm64 ./src ./out/darwin-arm64
 ```
 
 ## Written offer
